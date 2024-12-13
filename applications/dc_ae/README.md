@@ -78,7 +78,25 @@ y = dc_ae.decode(latent)
 save_image(y * 0.5 + 0.5, "demo_dc_ae.png")
 ```
 
+Alternatively, one can also use the following script to get the reconstruction result.
+
+``` bash
+python -m applications.dc_ae.demo_dc_ae_model model=dc-ae-f32c32-in-1.0 run_dir=.demo/reconstruction/dc-ae-f32c32-in-1.0 input_path_list=[assets/fig/girl.png]
+```
+
 ### Efficient Diffusion Models with DC-AE
+
+| Autoencoder                                                          | Diffusion Model                                                                                                      | Params (M) | MACs (G) | ImageNet 512x512 FID (without cfg) | ImageNet 512x512 FID (with cfg) |
+| :------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------: | :-----: | :----: | :-----------: | :----------: |
+| [DC-AE-f32](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0)  | [UViT-S](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0-uvit-s-in-512px)                                     |   44.79 |  12.27 |         46.12 |        18.08 |
+| [DC-AE-f32](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0)  | [DiT-XL](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0-dit-xl-in-512px)                                     |  674.89 | 118.68 |          9.56 |         2.84 |
+| [DC-AE-f32](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0)  | [DiT-XL (train batch size 1024)](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0-dit-xl-in-512px-trainbs1024) |  674.89 | 118.68 |          6.88 |         2.41 |
+| [DC-AE-f32](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0)  | [UViT-H](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0-uvit-h-in-512px)                                     |  500.87 | 133.25 |          9.83 |         2.53 |
+| [DC-AE-f64](https://huggingface.co/mit-han-lab/dc-ae-f64c128-in-1.0) | [UViT-H](https://huggingface.co/mit-han-lab/dc-ae-f64c128-in-1.0-uvit-h-in-512px)                                    |  500.87 |  33.25 |         13.96 |         3.01 |
+| [DC-AE-f64](https://huggingface.co/mit-han-lab/dc-ae-f64c128-in-1.0) | [UViT-H (train 2000k steps)](https://huggingface.co/mit-han-lab/dc-ae-f64c128-in-1.0-uvit-h-in-512px-train2000k)     |  500.87 |  33.25 |         12.26 |         2.66 |
+| [DC-AE-f32](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0)  | [UViT-2B](https://huggingface.co/mit-han-lab/dc-ae-f32c32-in-1.0-uvit-2b-in-512px)                                   | 1580.40 | 414.91 |          8.13 |         2.30 |
+| [DC-AE-f64](https://huggingface.co/mit-han-lab/dc-ae-f64c128-in-1.0) | [UViT-2B](https://huggingface.co/mit-han-lab/dc-ae-f64c128-in-1.0-uvit-2b-in-512px)                                  | 1580.40 | 104.65 |          7.78 |         2.47 |
+| [DC-AE-f64](https://huggingface.co/mit-han-lab/dc-ae-f64c128-in-1.0) | [UViT-2B (train 2000k steps)](https://huggingface.co/mit-han-lab/dc-ae-f64c128-in-1.0-uvit-2b-in-512px-train2000k)   | 1580.40 | 104.65 |          6.50 |         2.25 |
 
 ```python
 # build DC-AE-Diffusion models
@@ -190,10 +208,17 @@ torchrun --nnodes=1 --nproc_per_node=8 -m applications.dc_ae.eval_dc_ae_diffusio
 - Generate and save latent:
 
 ```bash
+# Example: DC-AE-f64
 torchrun --nnodes=1 --nproc_per_node=8 -m applications.dc_ae.dc_ae_generate_latent resolution=512 \
     image_root_path=~/dataset/imagenet/train batch_size=64 \
     model_name=dc-ae-f64c128-in-1.0 scaling_factor=0.2889 \
     latent_root_path=assets/data/latent/dc_ae_f64c128_in_1.0/imagenet_512
+
+# Example: DC-AE-f32
+torchrun --nnodes=1 --nproc_per_node=8 -m applications.dc_ae.dc_ae_generate_latent resolution=512 \
+    image_root_path=~/dataset/imagenet/train batch_size=64 \
+    model_name=dc-ae-f32c32-in-1.0 scaling_factor=0.3189 \
+    latent_root_path=assets/data/latent/dc_ae_f32c32_in_1.0/imagenet_512
 ```
 
 - Run training
@@ -210,6 +235,30 @@ torchrun --nnodes=1 --nproc_per_node=8 -m applications.dc_ae.train_dc_ae_diffusi
     max_steps=500000 ema_decay=0.9999 \
     fid.ref_path=assets/data/fid/imagenet_512_train.npz \
     run_dir=.exp/diffusion/imagenet_512/dc_ae_f64c128_in_1.0/uvit_h_1/bs_1024_lr_2e-4_bf16 log=False
+
+# Example: DC-AE-f32 + DiT-XL on ImageNet 512x512
+torchrun --nnodes=1 --nproc_per_node=8 -m applications.dc_ae.train_dc_ae_diffusion_model resolution=512 \
+    train_dataset=latent_imagenet latent_imagenet.batch_size=32 latent_imagenet.data_dir=assets/data/latent/dc_ae_f32c32_in_1.0/imagenet_512 \
+    evaluate_dataset=sample_class sample_class.num_samples=50000 \
+    autoencoder=dc-ae-f32c32-in-1.0 scaling_factor=0.3189 \
+    model=dit dit.learn_sigma=True dit.in_channels=32 dit.patch_size=1 dit.depth=28 dit.hidden_size=1152 dit.num_heads=16 \
+    dit.train_scheduler=GaussianDiffusion dit.eval_scheduler=GaussianDiffusion \
+    optimizer.name=adamw optimizer.lr=0.0001 optimizer.weight_decay=0 optimizer.betas=[0.9,0.999] lr_scheduler.name=constant amp=fp16 \
+    max_steps=3000000 ema_decay=0.9999 \
+    fid.ref_path=assets/data/fid/imagenet_512_train.npz \
+    run_dir=.exp/diffusion/imagenet_512/dc_ae_f32c32_in_1.0/dit_xl_1/bs_256_lr_1e-4_fp16 log=False
+
+# Example: DC-AE-f32 + DiT-XL on ImageNet 512x512 with batch size 1024
+torchrun --nnodes=1 --nproc_per_node=8 -m applications.dc_ae.train_dc_ae_diffusion_model resolution=512 \
+    train_dataset=latent_imagenet latent_imagenet.batch_size=128 latent_imagenet.data_dir=assets/data/latent/dc_ae_f32c32_in_1.0/imagenet_512 \
+    evaluate_dataset=sample_class sample_class.num_samples=50000 \
+    autoencoder=dc-ae-f32c32-in-1.0 scaling_factor=0.3189 \
+    model=dit dit.learn_sigma=True dit.in_channels=32 dit.patch_size=1 dit.depth=28 dit.hidden_size=1152 dit.num_heads=16 \
+    dit.train_scheduler=GaussianDiffusion dit.eval_scheduler=GaussianDiffusion \
+    optimizer.name=adamw optimizer.lr=0.0002 optimizer.weight_decay=0 optimizer.betas=[0.9,0.999] lr_scheduler.name=constant amp=fp16 \
+    max_steps=3000000 ema_decay=0.9999 \
+    fid.ref_path=assets/data/fid/imagenet_512_train.npz \
+    run_dir=.exp/diffusion/imagenet_512/dc_ae_f32c32_in_1.0/dit_xl_1/bs_1024_lr_2e-4_fp16 log=False
 ```
 
 ## Reference
