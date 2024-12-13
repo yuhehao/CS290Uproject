@@ -42,7 +42,7 @@ def main():
     evaluator_cfg.cfg_scale = cfg.cfg_scale
     evaluator_cfg = OmegaConf.to_object(evaluator_cfg)
     evaluator = Evaluator(evaluator_cfg)
-    dc_ae_diffusion = DCAE_Diffusion_HF.from_pretrained(f"mit-han-lab/{cfg.model}")
+    dc_ae_diffusion = DCAE_Diffusion_HF.from_pretrained(f"./{cfg.model}")
     evaluator.network.load_state_dict(dc_ae_diffusion.diffusion_model.state_dict())
     valid_info_dict = evaluator.evaluate(-1)
     if is_master():

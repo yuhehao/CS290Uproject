@@ -21,7 +21,7 @@ class GenerateReferenceConfig:
     fid: FIDStatsConfig = field(default_factory=FIDStatsConfig)
 
     # dataset
-    dataset: str = MISSING
+    dataset: str = "imagenet"#MISSING
     imagenet: ImageNetDataProviderConfig = field(default_factory=ImageNetDataProviderConfig)
 
 
@@ -33,8 +33,10 @@ def main():
     dist_init()
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    # print(f"local rank: {get_dist_local_rank()}")
+    # Assert("0")
     torch.cuda.set_device(get_dist_local_rank())
-
+    # torch.cuda.set_device(0)
     if cfg.dataset == "imagenet":
         data_provider = ImageNetDataProvider(cfg.imagenet)
     else:

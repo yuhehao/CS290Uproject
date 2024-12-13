@@ -17,11 +17,11 @@ from efficientvit.models.utils.network import get_dtype_from_str
 
 @dataclass
 class DemoDiffusionModelConfig:
-    model: str = MISSING
+    model: str = "dc-ae-f32c32-in-1.0"#"dc-ae-f32c32-in-1.0-dit-xl-in-512px" #MISSING
     diffusion_model_dtype: str = "fp32"
     autoencoder_dtype: str = "fp32"
     cfg_scale: float = 6.0
-    run_dir: str = MISSING
+    run_dir: str = "./"#MISSING
 
 
 def main():

@@ -86,7 +86,8 @@ class Evaluator:
             raise ValueError(f"dataset {cfg.dataset} is not supported")
 
         # model
-        model = DCAE_HF.from_pretrained(f"mit-han-lab/{cfg.model}")
+        # model = DCAE_HF.from_pretrained(f"mit-han-lab/{cfg.model}")
+        model = DCAE_HF.from_pretrained(f"./{cfg.model}")
 
         # if cfg.channels_last:
         #     model = model.to(memory_format=torch.channels_last)
